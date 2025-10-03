@@ -1,0 +1,104 @@
+:root {
+    --azul: #015AA2;
+    --amarelo: #FFF200;
+    --vermelho: #EE1C25;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: var(--azul);
+    color: white;
+}
+
+header {
+    background-color: var(--amarelo);
+    color: var(--azul);
+    padding: 1rem;
+    text-align: center;
+    font-size: 1.8rem;
+    font-weight: bold;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+}
+
+main {
+    padding: 2rem;
+}
+
+h2, h3 {
+    margin-top: 0;
+}
+
+.task-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.task-card {
+    background-color: var(--amarelo);
+    color: var(--azul);
+    padding: 1rem;
+    border-radius: 10px;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+    cursor: grab;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: transform 0.2s;
+}
+
+.task-card.completed {
+    background-color: var(--vermelho);
+    color: white;
+    text-decoration: line-through;
+    opacity: 0.8;
+}
+
+.task-card.dragging {
+    opacity: 0.5;
+    transform: scale(1.05);
+}
+
+button {
+    background-color: var(--vermelho);
+    border: none;
+    color: white;
+    padding: 0.3rem 0.6rem;
+    cursor: pointer;
+    border-radius: 3px;
+}
+
+.config-section {
+    margin-top: 3rem;
+    background-color: rgba(255,255,255,0.1);
+    padding: 1rem;
+    border-radius: 10px;
+}
+
+label, input, select {
+    display: block;
+    margin: 0.5rem 0;
+}
+
+select, input[type="text"] {
+    width: 100%;
+    padding: 0.4rem;
+    border-radius: 5px;
+    border: none;
+}
+
+.save-btn {
+    background-color: var(--amarelo);
+    color: var(--azul);
+    font-weight: bold;
+    margin-top: 1rem;
+    width: 100%;
+    padding: 0.5rem;
+}

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lista Semanal de Tarefas</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>Lista Semanal de Tarefas</header>
+
+<main>
+    <section id="today-tasks">
+        <h2 id="day-title"></h2>
+        <div id="task-container" class="task-grid"></div>
+    </section>
+
+    <section class="config-section">
+        <h3>Configurar Tarefas</h3>
+        <label for="day-select">Dia da semana:</label>
+        <select id="day-select">
+            <option value="0">Domingo</option>
+            <option value="1">Segunda-feira</option>
+            <option value="2">Terça-feira</option>
+            <option value="3">Quarta-feira</option>
+            <option value="4">Quinta-feira</option>
+            <option value="5">Sexta-feira</option>
+            <option value="6">Sábado</option>
+        </select>
+
+        <label for="task-input">Nova tarefa:</label>
+        <input type="text" id="task-input" placeholder="Digite a tarefa">
+
+        <button id="save-task" class="save-btn">Adicionar tarefa</button>
+    </section>
+</main>
+
+<script src="script.js"></script>
+</body>
+</html>
