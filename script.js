@@ -1,14 +1,49 @@
-// script.js
+// script.js - versão completa com Firebase
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-let tarefas = JSON.parse(localStorage.getItem("tarefas")) || [];
-let resetDay = parseInt(localStorage.getItem("resetDay")) || 6; // padrão: sábado
+const firebaseConfig = {
+  apiKey: "AIzaSyAMsIzfGCBt6-Lg0xTOkpZW6IcvBM8qLrI",
+  authDomain: "lidl-tarefas.firebaseapp.com",
+  projectId: "lidl-tarefas",
+  storageBucket: "lidl-tarefas.appspot.com",
+  messagingSenderId: "207588440749",
+  appId: "1:207588440749:web:8f40773f96cb11d5706424",
+  measurementId: "G-GHG6MEZB2F"
+};
 
-function salvarTarefas() {
-  localStorage.setItem("tarefas", JSON.stringify(tarefas));
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+let tarefas = [];
+let resetDay = 6; // padrão: sábado
+
+// CRUD Firebase
+async function salvarTarefaFirebase(tarefa) {
+  await addDoc(collection(db, "tarefas"), tarefa);
 }
 
-function salvarConfig() {
-  localStorage.setItem("resetDay", resetDay);
+async function listarTarefasFirebase() {
+  const snapshot = await getDocs(collection(db, "tarefas"));
+  const lista = [];
+  snapshot.forEach(docSnap => lista.push({ id: docSnap.id, ...docSnap.data() }));
+  return lista;
+}
+
+async function atualizarTarefaFirebase(id, dados) {
+  await setDoc(doc(db, "tarefas", id), dados);
+}
+
+async function eliminarTarefaFirebase(id) {
+  await deleteDoc(doc(db, "tarefas", id));
+}
+
+// Carregar tarefas do Firebase
+async function carregarTarefas() {
+  tarefas = await listarTarefasFirebase();
+  renderHoje();
+  renderResumo();
+  renderConfig();
 }
 
 function diaAtual() {
@@ -21,25 +56,22 @@ function renderHoje() {
   pendentes.innerHTML = "";
   concluidas.innerHTML = "";
   const hoje = diaAtual();
-  tarefas.forEach((tarefa, idx) => {
+  tarefas.forEach(tarefa => {
     if (tarefa.dias.includes(hoje)) {
       const li = document.createElement("li");
       const check = document.createElement("input");
       check.type = "checkbox";
-      check.checked = tarefa.concluida[hoje] || false;
-      check.onchange = () => {
+      check.checked = tarefa.concluida ? tarefa.concluida[hoje] || false : false;
+      check.onchange = async () => {
+        tarefa.concluida = tarefa.concluida || {};
         tarefa.concluida[hoje] = check.checked;
-        salvarTarefas();
-        renderHoje();
-        renderResumo();
+        await atualizarTarefaFirebase(tarefa.id, tarefa);
+        carregarTarefas();
       };
       li.appendChild(check);
       li.appendChild(document.createTextNode(tarefa.nome));
-      if (check.checked) {
-        concluidas.appendChild(li);
-      } else {
-        pendentes.appendChild(li);
-      }
+      if (check.checked) concluidas.appendChild(li);
+      else pendentes.appendChild(li);
     }
   });
 }
@@ -57,11 +89,12 @@ function renderResumo() {
         const li = document.createElement("li");
         const check = document.createElement("input");
         check.type = "checkbox";
-        check.checked = tarefa.concluida[d] || false;
-        check.onchange = () => {
+        check.checked = tarefa.concluida ? tarefa.concluida[d] || false : false;
+        check.onchange = async () => {
+          tarefa.concluida = tarefa.concluida || {};
           tarefa.concluida[d] = check.checked;
-          salvarTarefas();
-          renderHoje();
+          await atualizarTarefaFirebase(tarefa.id, tarefa);
+          carregarTarefas();
         };
         li.appendChild(check);
         li.appendChild(document.createTextNode(tarefa.nome));
@@ -79,20 +112,20 @@ function renderConfig() {
   tarefas.forEach((tarefa, idx) => {
     const li = document.createElement("li");
     li.textContent = tarefa.nome;
+
     const editBtn = document.createElement("button");
     editBtn.textContent = "Editar";
     editBtn.className = "edit";
     editBtn.onclick = () => editarTarefa(idx);
+
     const deleteBtn = document.createElement("button");
     deleteBtn.textContent = "Eliminar";
     deleteBtn.className = "delete";
-    deleteBtn.onclick = () => {
-      tarefas.splice(idx, 1);
-      salvarTarefas();
-      renderConfig();
-      renderHoje();
-      renderResumo();
+    deleteBtn.onclick = async () => {
+      await eliminarTarefaFirebase(tarefa.id);
+      carregarTarefas();
     };
+
     li.appendChild(editBtn);
     li.appendChild(deleteBtn);
     listaConfig.appendChild(li);
@@ -101,7 +134,7 @@ function renderConfig() {
   document.getElementById("reset-day").value = resetDay;
 }
 
-function editarTarefa(idx) {
+async function editarTarefa(idx) {
   const tarefa = tarefas[idx];
   const novoNome = prompt("Novo nome da tarefa:", tarefa.nome);
   if (!novoNome) return;
@@ -109,19 +142,23 @@ function editarTarefa(idx) {
   if (novosDias === null) return;
   tarefa.nome = novoNome;
   tarefa.dias = novosDias.split(",").map(d => parseInt(d.trim())).filter(d => !isNaN(d));
-  salvarTarefas();
-  renderConfig();
-  renderHoje();
-  renderResumo();
+  await atualizarTarefaFirebase(tarefa.id, tarefa);
+  carregarTarefas();
 }
 
-function resetarTarefasSeNecessario() {
+function toggleEditarTarefas() {
+  const lista = document.getElementById("lista-config");
+  lista.style.display = lista.style.display === "none" ? "block" : "none";
+}
+
+async function resetarTarefasSeNecessario() {
   const agora = new Date();
   if (agora.getDay() === resetDay && agora.getHours() === 23 && agora.getMinutes() === 59) {
-    tarefas.forEach(tarefa => tarefa.concluida = {});
-    salvarTarefas();
-    renderHoje();
-    renderResumo();
+    for (let tarefa of tarefas) {
+      tarefa.concluida = {};
+      await atualizarTarefaFirebase(tarefa.id, tarefa);
+    }
+    carregarTarefas();
   }
 }
 
@@ -133,34 +170,24 @@ function showSection(id) {
   if (id === "config") renderConfig();
 }
 
-function toggleEditarTarefas() {
-  const lista = document.getElementById("lista-config");
-  lista.style.display = lista.style.display === "none" ? "block" : "none";
-}
-
-document.getElementById("form-tarefa").addEventListener("submit", e => {
+// Eventos
+document.getElementById("form-tarefa").addEventListener("submit", async e => {
   e.preventDefault();
   const nome = document.getElementById("tarefa-nome").value;
   const dias = [...document.querySelectorAll("#form-tarefa input[type=checkbox]:checked")].map(cb => parseInt(cb.value));
   if (nome && dias.length) {
-    tarefas.push({ nome, dias, concluida: {} });
-    salvarTarefas();
+    await salvarTarefaFirebase({ nome, dias, concluida: {} });
     document.getElementById("form-tarefa").reset();
-    renderHoje();
-    renderResumo();
-    renderConfig();
+    carregarTarefas();
   }
 });
 
 document.getElementById("reset-day").addEventListener("change", e => {
   resetDay = parseInt(e.target.value);
-  salvarConfig();
 });
 
-// Intervalo para verificar reset
+// Intervalo para reset
 setInterval(resetarTarefasSeNecessario, 60000);
 
 // Inicializar
-renderHoje();
-renderResumo();
-renderConfig();
+carregarTarefas();
