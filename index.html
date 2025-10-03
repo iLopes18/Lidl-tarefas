@@ -1,41 +1,80 @@
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lista Semanal de Tarefas</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <title>To-Do List Semanal</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <header>
+    <h1>To-Do List Semanal</h1>
+    <nav>
+      <button onclick="showSection('hoje')">Hoje</button>
+      <button onclick="showSection('resumo')">Resumo</button>
+      <button onclick="showSection('config')">Configuração</button>
+    </nav>
+  </header>
 
-<header>Lista Semanal de Tarefas</header>
-
-<main>
-    <section id="today-tasks">
-        <h2 id="day-title"></h2>
-        <div id="task-container" class="task-grid"></div>
+  <main>
+    <!-- Hoje -->
+    <section id="hoje" class="active">
+      <h2>Tarefas de Hoje</h2>
+      <div class="listas-hoje">
+        <div class="lista-box">
+          <h3>Por Fazer</h3>
+          <ul id="lista-hoje-pendentes"></ul>
+        </div>
+        <div class="lista-box">
+          <h3>Concluídas</h3>
+          <ul id="lista-hoje-concluidas"></ul>
+        </div>
+      </div>
     </section>
 
-    <section class="config-section">
-        <h3>Configurar Tarefas</h3>
-        <label for="day-select">Dia da semana:</label>
-        <select id="day-select">
-            <option value="0">Domingo</option>
-            <option value="1">Segunda-feira</option>
-            <option value="2">Terça-feira</option>
-            <option value="3">Quarta-feira</option>
-            <option value="4">Quinta-feira</option>
-            <option value="5">Sexta-feira</option>
-            <option value="6">Sábado</option>
+    <!-- Resumo -->
+    <section id="resumo">
+      <h2>Resumo da Semana</h2>
+      <div id="resumo-semana" class="grid-semana"></div>
+    </section>
+
+    <!-- Configuração -->
+    <section id="config">
+      <div class="form-config">
+        <h2>Adicionar Tarefa</h2>
+        <form id="form-tarefa">
+          <input type="text" id="tarefa-nome" placeholder="Descrição da tarefa" required>
+          <fieldset>
+            <legend>Dias da Semana</legend>
+            <label><input type="checkbox" value="0">Dom</label>
+            <label><input type="checkbox" value="1">Seg</label>
+            <label><input type="checkbox" value="2">Ter</label>
+            <label><input type="checkbox" value="3">Qua</label>
+            <label><input type="checkbox" value="4">Qui</label>
+            <label><input type="checkbox" value="5">Sex</label>
+            <label><input type="checkbox" value="6">Sáb</label>
+          </fieldset>
+          <button type="submit">Adicionar</button>
+        </form>
+
+        <h2>Gerir Tarefas</h2>
+        <button onclick="toggleEditarTarefas()">Editar Tarefas Existentes</button>
+        <ul id="lista-config" style="display:none;"></ul>
+
+        <h2>Configuração de Reset</h2>
+        <label for="reset-day">Dia para reset:</label>
+        <select id="reset-day">
+          <option value="0">Domingo</option>
+          <option value="1">Segunda</option>
+          <option value="2">Terça</option>
+          <option value="3">Quarta</option>
+          <option value="4">Quinta</option>
+          <option value="5">Sexta</option>
+          <option value="6">Sábado</option>
         </select>
-
-        <label for="task-input">Nova tarefa:</label>
-        <input type="text" id="task-input" placeholder="Digite a tarefa">
-
-        <button id="save-task" class="save-btn">Adicionar tarefa</button>
+      </div>
     </section>
-</main>
+  </main>
 
-<script src="script.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>

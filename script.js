@@ -1,84 +1,166 @@
-const days = ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"];
-const dayTitle = document.getElementById('day-title');
-const taskContainer = document.getElementById('task-container');
-const daySelect = document.getElementById('day-select');
-const taskInput = document.getElementById('task-input');
-const saveTaskBtn = document.getElementById('save-task');
+// script.js
 
-let tasks = JSON.parse(localStorage.getItem('weeklyTasks')) || {
-    0: [],1: [],2: [],3: [],4: [],5: [],6: []
-};
+let tarefas = JSON.parse(localStorage.getItem("tarefas")) || [];
+let resetDay = parseInt(localStorage.getItem("resetDay")) || 6; // padrão: sábado
 
-function renderTasks(dayIndex) {
-    dayTitle.textContent = `Tarefas de ${days[dayIndex]}`;
-    taskContainer.innerHTML = '';
+function salvarTarefas() {
+  localStorage.setItem("tarefas", JSON.stringify(tarefas));
+}
 
-    tasks[dayIndex].forEach((task, index) => {
-        const card = document.createElement('div');
-        card.className = 'task-card';
-        card.textContent = task.name;
-        if(task.completed) card.classList.add('completed');
-        card.draggable = true;
+function salvarConfig() {
+  localStorage.setItem("resetDay", resetDay);
+}
 
-        // Toggle completed on click
-        card.addEventListener('click', () => {
-            task.completed = !task.completed;
-            localStorage.setItem('weeklyTasks', JSON.stringify(tasks));
-            renderTasks(dayIndex);
-        });
+function diaAtual() {
+  return new Date().getDay();
+}
 
-        // Delete button
-        const delBtn = document.createElement('button');
-        delBtn.textContent = 'X';
-        delBtn.onclick = (e) => {
-            e.stopPropagation();
-            tasks[dayIndex].splice(index, 1);
-            localStorage.setItem('weeklyTasks', JSON.stringify(tasks));
-            renderTasks(dayIndex);
+function renderHoje() {
+  const pendentes = document.getElementById("lista-hoje-pendentes");
+  const concluidas = document.getElementById("lista-hoje-concluidas");
+  pendentes.innerHTML = "";
+  concluidas.innerHTML = "";
+  const hoje = diaAtual();
+  tarefas.forEach((tarefa, idx) => {
+    if (tarefa.dias.includes(hoje)) {
+      const li = document.createElement("li");
+      const check = document.createElement("input");
+      check.type = "checkbox";
+      check.checked = tarefa.concluida[hoje] || false;
+      check.onchange = () => {
+        tarefa.concluida[hoje] = check.checked;
+        salvarTarefas();
+        renderHoje();
+        renderResumo();
+      };
+      li.appendChild(check);
+      li.appendChild(document.createTextNode(tarefa.nome));
+      if (check.checked) {
+        concluidas.appendChild(li);
+      } else {
+        pendentes.appendChild(li);
+      }
+    }
+  });
+}
+
+function renderResumo() {
+  const resumo = document.getElementById("resumo-semana");
+  resumo.innerHTML = "";
+  const dias = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+  dias.forEach((dia, d) => {
+    const divDia = document.createElement("div");
+    divDia.innerHTML = `<h3>${dia}</h3>`;
+    const ul = document.createElement("ul");
+    tarefas.forEach(tarefa => {
+      if (tarefa.dias.includes(d)) {
+        const li = document.createElement("li");
+        const check = document.createElement("input");
+        check.type = "checkbox";
+        check.checked = tarefa.concluida[d] || false;
+        check.onchange = () => {
+          tarefa.concluida[d] = check.checked;
+          salvarTarefas();
+          renderHoje();
         };
-        card.appendChild(delBtn);
-
-        // Drag events
-        card.addEventListener('dragstart', () => card.classList.add('dragging'));
-        card.addEventListener('dragend', () => card.classList.remove('dragging'));
-
-        taskContainer.appendChild(card);
+        li.appendChild(check);
+        li.appendChild(document.createTextNode(tarefa.nome));
+        ul.appendChild(li);
+      }
     });
+    divDia.appendChild(ul);
+    resumo.appendChild(divDia);
+  });
 }
 
-// Drag-and-drop to reorder
-taskContainer.addEventListener('dragover', e => {
-    e.preventDefault();
-    const draggingCard = document.querySelector('.dragging');
-    const afterElement = getDragAfterElement(taskContainer, e.clientY);
-    if(afterElement == null) {
-        taskContainer.appendChild(draggingCard);
-    } else {
-        taskContainer.insertBefore(draggingCard, afterElement);
-    }
-});
+function renderConfig() {
+  const listaConfig = document.getElementById("lista-config");
+  listaConfig.innerHTML = "";
+  tarefas.forEach((tarefa, idx) => {
+    const li = document.createElement("li");
+    li.textContent = tarefa.nome;
+    const editBtn = document.createElement("button");
+    editBtn.textContent = "Editar";
+    editBtn.className = "edit";
+    editBtn.onclick = () => editarTarefa(idx);
+    const deleteBtn = document.createElement("button");
+    deleteBtn.textContent = "Eliminar";
+    deleteBtn.className = "delete";
+    deleteBtn.onclick = () => {
+      tarefas.splice(idx, 1);
+      salvarTarefas();
+      renderConfig();
+      renderHoje();
+      renderResumo();
+    };
+    li.appendChild(editBtn);
+    li.appendChild(deleteBtn);
+    listaConfig.appendChild(li);
+  });
 
-function getDragAfterElement(container, y) {
-    const draggableElements = [...container.querySelectorAll('.task-card:not(.dragging)')];
-    return draggableElements.reduce((closest, child) => {
-        const box = child.getBoundingClientRect();
-        const offset = y - box.top - box.height / 2;
-        if(offset < 0 && offset > closest.offset) return {offset: offset, element: child};
-        else return closest;
-    }, {offset: Number.NEGATIVE_INFINITY}).element;
+  document.getElementById("reset-day").value = resetDay;
 }
 
-const today = new Date().getDay();
-daySelect.value = today;
-renderTasks(today);
+function editarTarefa(idx) {
+  const tarefa = tarefas[idx];
+  const novoNome = prompt("Novo nome da tarefa:", tarefa.nome);
+  if (!novoNome) return;
+  const novosDias = prompt("Novos dias (separados por vírgula, 0=Dom, 6=Sáb):", tarefa.dias.join(","));
+  if (novosDias === null) return;
+  tarefa.nome = novoNome;
+  tarefa.dias = novosDias.split(",").map(d => parseInt(d.trim())).filter(d => !isNaN(d));
+  salvarTarefas();
+  renderConfig();
+  renderHoje();
+  renderResumo();
+}
 
-saveTaskBtn.addEventListener('click', () => {
-    const dayIndex = parseInt(daySelect.value);
-    const taskName = taskInput.value.trim();
-    if(taskName) {
-        tasks[dayIndex].push({name: taskName, completed: false});
-        localStorage.setItem('weeklyTasks', JSON.stringify(tasks));
-        taskInput.value = '';
-        if(dayIndex === today) renderTasks(today);
-    }
+function resetarTarefasSeNecessario() {
+  const agora = new Date();
+  if (agora.getDay() === resetDay && agora.getHours() === 23 && agora.getMinutes() === 59) {
+    tarefas.forEach(tarefa => tarefa.concluida = {});
+    salvarTarefas();
+    renderHoje();
+    renderResumo();
+  }
+}
+
+function showSection(id) {
+  document.querySelectorAll("main section").forEach(sec => sec.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  if (id === "hoje") renderHoje();
+  if (id === "resumo") renderResumo();
+  if (id === "config") renderConfig();
+}
+
+function toggleEditarTarefas() {
+  const lista = document.getElementById("lista-config");
+  lista.style.display = lista.style.display === "none" ? "block" : "none";
+}
+
+document.getElementById("form-tarefa").addEventListener("submit", e => {
+  e.preventDefault();
+  const nome = document.getElementById("tarefa-nome").value;
+  const dias = [...document.querySelectorAll("#form-tarefa input[type=checkbox]:checked")].map(cb => parseInt(cb.value));
+  if (nome && dias.length) {
+    tarefas.push({ nome, dias, concluida: {} });
+    salvarTarefas();
+    document.getElementById("form-tarefa").reset();
+    renderHoje();
+    renderResumo();
+    renderConfig();
+  }
 });
+
+document.getElementById("reset-day").addEventListener("change", e => {
+  resetDay = parseInt(e.target.value);
+  salvarConfig();
+});
+
+// Intervalo para verificar reset
+setInterval(resetarTarefasSeNecessario, 60000);
+
+// Inicializar
+renderHoje();
+renderResumo();
+renderConfig();
